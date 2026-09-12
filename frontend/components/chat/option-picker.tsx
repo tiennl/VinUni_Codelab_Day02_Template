@@ -23,7 +23,7 @@ export function OptionPicker({ step, disabled, onSubmit }: OptionPickerProps) {
             variant="outline"
             disabled={disabled}
             onClick={() => onSubmit(option.value, option.label)}
-            className="rounded-xl border-slate-200 bg-white hover:border-[#0F2A4A] hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-[#0F2A4A] dark:border-slate-800 dark:bg-slate-900 dark:hover:border-cyan-500 dark:hover:bg-slate-800/80 dark:hover:text-cyan-300 text-sm font-semibold py-2.5 px-4 shadow-sm hover:shadow-md transition-all text-left active:scale-[0.98]"
+            className="rounded-xl border-[#C6A75E]/35 bg-white text-[#1F2A44] hover:border-[#1F2A44] hover:bg-[#1F2A44] hover:text-[#E8DCC8] text-sm font-semibold py-2.5 px-4 shadow-xs hover:shadow-md transition-all text-left active:scale-[0.98]"
           >
             {option.label}
           </Button>
@@ -62,11 +62,11 @@ export function OptionPicker({ step, disabled, onSubmit }: OptionPickerProps) {
               onClick={() => toggleOption(option)}
               className={`flex items-center gap-2 rounded-xl border text-sm font-semibold py-2.5 px-4 transition-all shadow-xs ${
                 isSelected
-                  ? 'border-[#0F2A4A] bg-gradient-to-r from-[#0F2A4A] to-[#1E3A8A] text-white ring-2 ring-cyan-400/40 shadow-md'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-indigo-500/50'
+                  ? 'border-[#1F2A44] bg-[#1F2A44] text-[#E8DCC8] font-extrabold ring-2 ring-[#C6A75E]/40 shadow-md'
+                  : 'border-[#C6A75E]/35 bg-white text-[#1F2A44] hover:border-[#C6A75E] hover:bg-[#F7F5F0]'
               }`}
             >
-              {isSelected && <Check className="h-4 w-4 text-cyan-300" />}
+              {isSelected && <Check className="h-4 w-4 text-[#C6A75E]" />}
               <span>{option.label}</span>
             </button>
           )
@@ -77,7 +77,7 @@ export function OptionPicker({ step, disabled, onSubmit }: OptionPickerProps) {
         <Button
           disabled={disabled || selectedMulti.length === 0}
           onClick={handleConfirmMulti}
-          className="rounded-xl bg-[#0F2A4A] hover:bg-[#16365F] text-white shadow-lg shadow-blue-950/20 font-bold px-6 py-2.5 transition-all"
+          className="rounded-xl bg-[#1F2A44] hover:bg-[#2C3B5E] text-[#E8DCC8] font-extrabold shadow-lg shadow-[#1F2A44]/20 px-6 py-2.5 transition-all"
         >
           Xác nhận ({selectedMulti.length})
         </Button>
