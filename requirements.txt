@@ -1,6 +1,7 @@
 # Environment Dependencies
 # List all required python packages here.
 openai
+openpyxl
 pytest
 fastapi
 uvicorn[standard]

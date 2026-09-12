@@ -11,14 +11,19 @@ Configure the model with OPENAI_API_KEY. No key is exposed by the API.
 from __future__ import annotations
 
 import json
+import math
 import os
 import re
 import sqlite3
+import sys
+import csv
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
+from uuid import uuid4
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel, Field
@@ -323,10 +328,19 @@ class Property(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
-    conversation_id: str | None = None
+    conversation_id: str | None = Field(default=None, max_length=128)
+
+
+class ConversationMessage(BaseModel):
+    message_id: int
+    conversation_id: str
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: str
 
 
 class ChatResponse(BaseModel):
+    conversation_id: str
     answer: str
     listings: list[Property]
     model: str
@@ -342,6 +356,12 @@ def database_connection() -> sqlite3.Connection:
 
 def initialize_database() -> None:
     with database_connection() as connection:
+        existing_columns = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(properties)").fetchall()
+        }
+        if existing_columns and "property_id" not in existing_columns:
+            connection.execute("ALTER TABLE properties RENAME TO properties_legacy")
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS properties (
@@ -379,6 +399,17 @@ def initialize_database() -> None:
                 collected_at TEXT,
                 verified_at TEXT,
                 updated_at TEXT
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS chat_messages (
+                message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id TEXT NOT NULL,
+                role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
+                content TEXT NOT NULL,
+                created_at TEXT NOT NULL
             )
             """
         )
@@ -422,6 +453,48 @@ def row_to_property(row: sqlite3.Row) -> Property:
     return Property.model_validate(data)
 
 
+def new_conversation_id(requested_id: str | None) -> str:
+    """Keep a supplied session ID or create one that survives frontend refreshes."""
+    cleaned_id = (requested_id or "").strip()
+    return cleaned_id[:128] if cleaned_id else uuid4().hex
+
+
+def current_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def save_chat_message(conversation_id: str, role: Literal["user", "assistant"], content: str) -> None:
+    with database_connection() as connection:
+        connection.execute(
+            """
+            INSERT INTO chat_messages (conversation_id, role, content, created_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (conversation_id, role, content, current_timestamp()),
+        )
+
+
+def load_chat_history(conversation_id: str, limit: int = 20) -> list[ConversationMessage]:
+    with database_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT message_id, conversation_id, role, content, created_at
+            FROM chat_messages
+            WHERE conversation_id = ?
+            ORDER BY message_id DESC
+            LIMIT ?
+            """,
+            (conversation_id, limit),
+        ).fetchall()
+    return [ConversationMessage.model_validate(dict(row)) for row in reversed(rows)]
+
+
+def history_context(history: list[ConversationMessage]) -> str:
+    if not history:
+        return "No earlier messages in this conversation."
+    return "\n".join(f"{item.role.upper()}: {item.content}" for item in history)
+
+
 def search_listings(
     location: str | None = None,
     property_type: PropertyType | None = None,
@@ -455,6 +528,192 @@ def search_listings(
     with database_connection() as connection:
         rows = connection.execute(query, values).fetchall()
     return [row_to_property(row) for row in rows]
+
+
+def nullable_value(value: object) -> object:
+    """Convert empty Excel cells and NaN values to database NULL."""
+    if value is None:
+        return None
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    return value
+
+
+def json_list(value: object) -> list[str]:
+    """Parse JSON-array Excel fields, returning an empty list when unavailable."""
+    value = nullable_value(value)
+    if value is None:
+        return []
+    try:
+        parsed = json.loads(str(value))
+    except (TypeError, json.JSONDecodeError):
+        return [str(value)]
+    if isinstance(parsed, list):
+        return [str(item) for item in parsed if item is not None]
+    return [str(parsed)]
+
+
+def image_urls(value: object) -> list[str]:
+    """Flatten the workbook's categorized image object into the API image list."""
+    value = nullable_value(value)
+    if value is None:
+        return []
+    try:
+        parsed = json.loads(str(value))
+    except (TypeError, json.JSONDecodeError):
+        return [str(value)]
+    if isinstance(parsed, dict):
+        urls: list[str] = []
+        for item in parsed.values():
+            if isinstance(item, list):
+                urls.extend(str(url) for url in item if url)
+            elif item:
+                urls.append(str(item))
+        return urls
+    return [str(item) for item in parsed] if isinstance(parsed, list) else [str(parsed)]
+
+
+def normalize_property_type(value: object) -> str:
+    text = str(nullable_value(value) or "").lower()
+    if "căn hộ" in text or "apartment" in text:
+        return "apartment"
+    if "villa" in text:
+        return "villa"
+    if "nhà" in text or "house" in text:
+        return "house"
+    return "project"
+
+
+def normalize_status(value: object) -> str:
+    text = str(nullable_value(value) or "").strip().lower()
+    if text in {"available", "for_sale", "for sale"}:
+        return "for_sale"
+    if text in {"sold", "closed"}:
+        return "sold"
+    return "reference_only"
+
+
+def import_xlsx_to_database(xlsx_path: str | Path) -> int:
+    """Import the workbook's Properties sheet into the current SQLite database."""
+    from openpyxl import load_workbook
+
+    source = Path(xlsx_path)
+    if not source.exists():
+        raise FileNotFoundError(f"Workbook not found: {source}")
+
+    workbook = load_workbook(source, read_only=True, data_only=True)
+    if "Properties" not in workbook.sheetnames:
+        raise ValueError("Workbook must contain a 'Properties' sheet")
+    worksheet = workbook["Properties"]
+    rows = worksheet.iter_rows(values_only=True)
+    headers = [str(value).strip() if value is not None else "" for value in next(rows)]
+    required_headers = {
+        "property_id", "project", "zone", "building", "unit_code", "city", "district",
+        "ward", "address", "latitude", "longitude", "property_type", "bedrooms",
+        "bathrooms", "area_m2", "floor", "price_vnd", "price_per_m2", "direction",
+        "view", "furnishing", "status", "handover_status", "purpose_fit", "loan_support",
+        "nearby_amenities", "images", "source_name", "source_url", "source_type",
+        "data_type", "collected_at", "verified_at", "updated_at",
+    }
+    missing = required_headers.difference(headers)
+    if missing:
+        raise ValueError(f"Workbook is missing required columns: {sorted(missing)}")
+
+    positions = {header: index for index, header in enumerate(headers)}
+    imported_rows: list[tuple[object, ...]] = []
+    for values in rows:
+        if not any(value is not None for value in values):
+            continue
+        get = lambda name: nullable_value(values[positions[name]])
+        imported_rows.append(
+            (
+                str(get("property_id")), get("project"), get("zone"), get("building"),
+                get("unit_code"), get("city"), get("district"), get("ward"), get("address"),
+                get("latitude"), get("longitude"), normalize_property_type(get("property_type")),
+                get("bedrooms"), get("bathrooms"), get("area_m2"), get("floor"),
+                get("price_vnd"), get("price_per_m2"), get("direction"), get("view"),
+                get("furnishing"), json.dumps(image_urls(get("images")), ensure_ascii=False),
+                normalize_status(get("status")), get("handover_status"),
+                json.dumps(json_list(get("purpose_fit")), ensure_ascii=False), get("loan_support"),
+                json.dumps(json_list(get("nearby_amenities")), ensure_ascii=False), get("source_name"),
+                get("source_url"), get("source_type"), get("data_type"), get("collected_at"),
+                get("verified_at"), get("updated_at"),
+            )
+        )
+    workbook.close()
+
+    initialize_database()
+    with database_connection() as connection:
+        connection.executemany(
+            """
+            INSERT OR REPLACE INTO properties (
+                property_id, project, zone, building, unit_code, city, district,
+                ward, address, latitude, longitude, property_type, bedrooms,
+                bathrooms, area_m2, floor, price_vnd, price_per_m2, direction,
+                view, furnishing, images_json, status, handover_status,
+                purpose_fit_json, loan_support, nearby_amenities_json,
+                source_name, source_url, source_type, data_type, collected_at,
+                verified_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            imported_rows,
+        )
+    return len(imported_rows)
+
+
+def import_image_csv_to_database(csv_path: str | Path) -> tuple[int, int]:
+    """Merge image URLs from CSV into properties.images_json by property_id."""
+    source = Path(csv_path)
+    if not source.exists():
+        raise FileNotFoundError(f"CSV file not found: {source}")
+
+    grouped_images: dict[str, list[str]] = {}
+    source_urls: dict[str, str] = {}
+    with source.open("r", encoding="utf-8-sig", newline="") as file:
+        reader = csv.DictReader(file)
+        required_headers = {"property_id", "image_type", "image_url", "source_url"}
+        if not reader.fieldnames or not required_headers.issubset(reader.fieldnames):
+            raise ValueError(f"CSV must contain columns: {sorted(required_headers)}")
+        for row in reader:
+            property_id = (row.get("property_id") or "").strip()
+            image_url = (row.get("image_url") or "").strip()
+            if not property_id or not image_url:
+                continue
+            urls = grouped_images.setdefault(property_id, [])
+            if image_url not in urls:
+                urls.append(image_url)
+            source_url = (row.get("source_url") or "").strip()
+            if source_url:
+                source_urls[property_id] = source_url
+
+    initialize_database()
+    with database_connection() as connection:
+        database_ids = {
+            row[0]
+            for row in connection.execute(
+                "SELECT property_id FROM properties WHERE property_id IN (%s)"
+                % ",".join("?" for _ in grouped_images),
+                list(grouped_images),
+            ).fetchall()
+        } if grouped_images else set()
+        unmatched = sorted(set(grouped_images) - database_ids)
+        if unmatched:
+            raise ValueError(f"CSV contains property_id values not found in database: {unmatched[:10]}")
+
+        connection.executemany(
+            """
+            UPDATE properties
+            SET images_json = ?, source_url = COALESCE(NULLIF(source_url, ''), ?)
+            WHERE property_id = ?
+            """,
+            [
+                (json.dumps(urls, ensure_ascii=False), source_urls.get(property_id), property_id)
+                for property_id, urls in grouped_images.items()
+            ],
+        )
+    return len(grouped_images), sum(len(urls) for urls in grouped_images.values())
 
 
 def extract_filters(message: str) -> dict[str, object]:
@@ -500,9 +759,18 @@ def listing_context(listings: list[Property]) -> str:
     )
 
 
-def call_model_api(user_message: str, listings: list[Property]) -> str:
-    """Call OpenAI using an environment API key and retrieved property context."""
-    api_key = os.getenv("OPENAI_API_KEY")
+def call_model_api(
+    user_message: str,
+    listings: list[Property],
+    custom_api_key: str | None = None,
+    history: list[ConversationMessage] | None = None,
+) -> str:
+    """Call OpenAI with a request key or the server's configured key.
+
+    A request key is used in memory for this request only. It is never stored
+    in SQLite, logs, response bodies, or conversation records.
+    """
+    api_key = (custom_api_key or os.getenv("OPENAI_API_KEY") or "").strip()
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is not configured")
 
@@ -517,6 +785,9 @@ def call_model_api(user_message: str, listings: list[Property]) -> str:
             "Prices are Vietnamese dong (VND); images are returned separately by the API."
         ),
         input=(
+            "CONVERSATION HISTORY:\n"
+            + history_context(history or [])
+            + "\n\n"
             "LISTINGS CONTEXT:\n"
             + listing_context(listings)
             + "\n\nUSER REQUEST:\n"
@@ -538,14 +809,31 @@ def fallback_answer(listings: list[Property]) -> str:
     return f"I found {len(listings)} available listing(s): {summary}."
 
 
-def process_chat(request: ChatRequest) -> ChatResponse:
+def process_chat(
+    request: ChatRequest,
+    custom_api_key: str | None = None,
+) -> ChatResponse:
+    conversation_id = new_conversation_id(request.conversation_id)
+    history = load_chat_history(conversation_id)
+    save_chat_message(conversation_id, "user", request.message)
     filters = extract_filters(request.message)
     listings = search_listings(**filters)
     try:
-        answer = call_model_api(request.message, listings)
-        return ChatResponse(answer=answer, listings=listings, model=OPENAI_MODEL, used_model=True)
+        answer = call_model_api(request.message, listings, custom_api_key, history)
+        used_model = True
+        model_name = OPENAI_MODEL
     except Exception:
-        return ChatResponse(answer=fallback_answer(listings), listings=listings, model="fallback", used_model=False)
+        answer = fallback_answer(listings)
+        used_model = False
+        model_name = "fallback"
+    save_chat_message(conversation_id, "assistant", answer)
+    return ChatResponse(
+        conversation_id=conversation_id,
+        answer=answer,
+        listings=listings,
+        model=model_name,
+        used_model=used_model,
+    )
 
 
 @asynccontextmanager
@@ -589,11 +877,29 @@ def get_listings(
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
-    return process_chat(request)
+def chat(
+    request: ChatRequest,
+    custom_api_key: str | None = Header(default=None, alias="X-OpenAI-API-Key"),
+) -> ChatResponse:
+    return process_chat(request, custom_api_key)
+
+
+@app.get("/api/chat/{conversation_id}/history", response_model=list[ConversationMessage])
+def chat_history(conversation_id: str) -> list[ConversationMessage]:
+    return load_chat_history(conversation_id)
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("real_estate_backend:app", host="127.0.0.1", port=8000, reload=False)
+    if len(sys.argv) == 3 and sys.argv[1] == "--import-xlsx":
+        imported = import_xlsx_to_database(sys.argv[2])
+        print(f"Imported {imported} properties into {DATABASE_PATH}")
+    elif len(sys.argv) == 3 and sys.argv[1] == "--import-images":
+        property_count, image_count = import_image_csv_to_database(sys.argv[2])
+        print(
+            f"Updated images for {property_count} properties with {image_count} URLs "
+            f"in {DATABASE_PATH}"
+        )
+    else:
+        uvicorn.run("real_estate_backend:app", host="127.0.0.1", port=8000, reload=False)
