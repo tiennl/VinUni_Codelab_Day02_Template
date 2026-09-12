@@ -501,29 +501,50 @@ def listing_context(listings: list[Property]) -> str:
 
 
 def call_model_api(user_message: str, listings: list[Property]) -> str:
-    """Call OpenAI using an environment API key and retrieved property context."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is not configured")
+    """Call Gemini or OpenAI using an environment API key and retrieved property context."""
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if gemini_key:
+        try:
+            from google import genai
+            from google.genai import types
 
-    client = OpenAI(api_key=api_key)
-    response = client.responses.create(
-        model=OPENAI_MODEL,
-        instructions=(
-            "You are a real-estate search assistant. Use only the supplied property context. "
-            "Never invent price, availability, location, dimensions, images, or legal facts. "
-            "Mention property_id and project when recommending properties. Answer in the user's language. "
-            "If a value is null or status is reference_only, say that it is not verified or not available. "
-            "Prices are Vietnamese dong (VND); images are returned separately by the API."
-        ),
-        input=(
-            "LISTINGS CONTEXT:\n"
-            + listing_context(listings)
-            + "\n\nUSER REQUEST:\n"
-            + user_message
-        ),
-    )
-    return (response.output_text or "I could not generate an answer.").strip()
+            client = genai.Client(api_key=gemini_key)
+            prompt = (
+                "You are a real-estate search assistant for Vinhomes. Use only the supplied property context.\n"
+                "Never invent price, availability, location, dimensions, images, or legal facts.\n"
+                "Mention property_id and project when recommending properties. Answer in Vietnamese.\n\n"
+                f"LISTINGS CONTEXT:\n{listing_context(listings)}\n\nUSER REQUEST:\n{user_message}"
+            )
+            res = client.models.generate_content(
+                model=os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
+                contents=prompt,
+            )
+            if res and res.text:
+                return res.text.strip()
+        except Exception as e:
+            print(f"Gemini API call warning: {e}")
+
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key:
+        client = OpenAI(api_key=openai_key)
+        response = client.responses.create(
+            model=OPENAI_MODEL,
+            instructions=(
+                "You are a real-estate search assistant. Use only the supplied property context. "
+                "Never invent price, availability, location, dimensions, images, or legal facts. "
+                "Mention property_id and project when recommending properties. Answer in the user's language."
+            ),
+            input=(
+                "LISTINGS CONTEXT:\n"
+                + listing_context(listings)
+                + "\n\nUSER REQUEST:\n"
+                + user_message
+            ),
+        )
+        return (response.output_text or "I could not generate an answer.").strip()
+
+    raise RuntimeError("No API key configured (neither GEMINI_API_KEY nor OPENAI_API_KEY)")
+
 
 
 def fallback_answer(listings: list[Property]) -> str:
