@@ -15,9 +15,10 @@
 | QUICK-ASSESS | Kiểm tra giải pháp đã tồn tại, trong đó có câu hỏi Vinhomes đã có chatbot giới thiệu bất động sản chưa | Giúp tôi tránh đề xuất lại một giải pháp đã có mà không biết | AI có thể gộp chatbot CSKH, kênh tư vấn và trợ lý tìm căn thành một sản phẩm | Tôi đối chiếu nguồn và thu hẹp đúng bước hiểu nhu cầu rồi lọc sản phẩm |
 | GROUP DEBATE | Không dùng AI để quyết định thay nhóm; mỗi người trình bày và phản biện pain point của nhau | AI chỉ cung cấp thông tin tham khảo trước buổi trao đổi | AI không biết pain point nào thật sự gần với trải nghiệm của thành viên | Nhóm phân tích tính thực tế, khả năng đo và biểu quyết chọn bài Vinhomes |
 | DEEP-DIVE | Sau khi nhóm chọn bài, tôi nhờ AI phân tích workflow trước/sau và AI Fit | Chỉ ra handoff giữa khách, AI và nhân viên kinh doanh | Phạm vi ban đầu quá rộng, gần thành một Agent bán hàng tự động | Giới hạn AI ở bước hiểu và giải thích; Rule lọc dữ liệu; người thật duyệt |
+| PROTOTYPE | Tôi dùng bộ `properties.xlsx` được cung cấp để tạo catalog JSON và nối vào code | Giúp chuẩn hóa 82 căn với 38 trường dữ liệu để Rule có thể lọc | Dữ liệu mẫu chưa đồng nghĩa với giỏ hàng đang còn hiệu lực ngoài thực tế | Chỉ dùng bản ghi `AVAILABLE`, `VERIFIED`, không có cờ mâu thuẫn và luôn yêu cầu nhân viên xác nhận lại |
 | Metrics | Kiểm tra cách đo 5 chỉ số tôi đề xuất | Chuyển mục tiêu thành công thức baseline → target → cách đo | “Độ chính xác trên 90%” chưa có định nghĩa | Định nghĩa đúng khi mã căn còn hiệu lực và thỏa toàn bộ điều kiện bắt buộc |
 | Boundary | Stress-test các tình huống rủi ro | Phát hiện rủi ro bịa giá, tự đặt lịch, lộ dữ liệu và thiên kiến | System Prompt đơn lẻ chưa đủ bảo vệ | Thêm kiểm tra Rule, JSON schema, bộ xác minh output và Fallback |
-| EVALUATE | So sánh GO, NOT YET và NO-GO | Làm rõ điều kiện dữ liệu và pilot | AI có xu hướng chọn GO vì prototype làm được | Chọn NOT YET cho triển khai thật vì chưa có dữ liệu, API và baseline |
+| EVALUATE | So sánh GO, NOT YET và NO-GO | Làm rõ điều kiện dữ liệu và pilot | AI có xu hướng chọn GO vì prototype làm được | Chọn NOT YET vì chưa có catalog chính thức, API vận hành và baseline |
 
 ---
 
@@ -99,7 +100,7 @@ Sau đó, từng thành viên chia sẻ pain point của mình và cùng debate 
 Nhóm biểu quyết chọn Trợ lý AI Bán hàng Vinhomes rồi tôi mới dùng AI để phân tích sâu hơn.
 Qua phân tích, tôi hiểu LLM phù hợp để hiểu câu tự nhiên, còn Rule phù hợp để lọc giá, vị trí và trạng thái căn.
 Tôi cũng nhận ra AI không được tự tạo dữ liệu, đặt lịch hoặc thay nhân viên đưa ra cam kết với khách hàng.
-Vì chưa có dữ liệu và baseline thật, nhóm chọn NOT YET cho triển khai nhưng vẫn tiếp tục làm prototype offline.
+Vì mới có dữ liệu mẫu và chưa có baseline thật, nhóm chọn NOT YET cho triển khai nhưng vẫn tiếp tục làm prototype offline.
 Nếu làm tiếp, tôi sẽ phỏng vấn khách hàng, nhân viên kinh doanh và thử với ít nhất 20 tình huống có dữ liệu đã ẩn danh.
 
 ---

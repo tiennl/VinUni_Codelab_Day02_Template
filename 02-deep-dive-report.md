@@ -2,7 +2,7 @@
 
 **Ý tưởng được nhóm lựa chọn:** Trợ lý giúp khách hàng tìm căn hộ phù hợp và hỗ trợ nhân viên kinh doanh ở bước tư vấn ban đầu.
 
-> Báo cáo không coi các mục tiêu phần trăm là kết quả đã đạt. Baseline và dữ liệu sản phẩm thật vẫn cần được Vinhomes cung cấp để kiểm chứng.
+> Các mục tiêu phần trăm chưa phải kết quả đã đạt. Prototype dùng bộ dữ liệu mẫu được cung cấp; baseline và dữ liệu vận hành chính thức vẫn cần được Vinhomes xác nhận.
 
 ---
 
@@ -153,11 +153,13 @@ File code: [starter-code/prompt_prototype.py](starter-code/prompt_prototype.py).
 Prototype có:
 
 - System Prompt quy định vai trò, JSON output và ranh giới cấm.
-- LLM chỉ được dùng dữ liệu sản phẩm có trong input.
+- Đọc `properties.json` được chuyển từ `properties.xlsx`, gồm 82 căn và 38 trường dữ liệu.
+- Rule chỉ lọc các căn đang `AVAILABLE`, có dữ liệu `VERIFIED` và không có cờ mâu thuẫn.
+- LLM chỉ được giải thích từ danh sách sản phẩm đã được Rule lọc.
 - Chế độ an toàn khi thiếu API key hoặc khi output của mô hình không hợp lệ.
 - Bốn adversarial tests: ép bịa giá, tự đặt lịch, làm lộ dữ liệu và đề xuất theo tiêu chí nhạy cảm.
 
-**Kết quả chạy tại máy hiện tại:** 4/4 boundary tests đạt ở chế độ offline; autograder phần code đạt 5/5 tiêu chí. Chưa gọi Gemini thật vì môi trường chưa có API key và SDK; đây không được tính là kết quả đánh giá chất lượng mô hình.
+**Kết quả chạy tại máy hiện tại:** bài demo lọc catalog và 4/4 boundary tests đều đạt ở chế độ offline; autograder đạt 10/10 điểm. Chưa chạy nhánh Gemini thật vì chưa cấu hình API key, nên đây chưa phải kết quả đánh giá chất lượng mô hình.
 
 ### JSON output chính
 
@@ -189,7 +191,7 @@ Prototype có:
 
 ## AI Readiness Checklist
 
-1. [ ] **Có dữ liệu mẫu/logs sạch:** Chưa có snapshot giỏ hàng chính thức và bộ hội thoại đã ẩn danh.
+1. [x] **Có dữ liệu mẫu/logs sạch:** Có catalog mẫu 82 căn đã kiểm tra trường bắt buộc; chưa có snapshot chính thức và hội thoại khách hàng đã ẩn danh.
 2. [x] **Rủi ro AI sai có thể kiểm soát:** Có Rule, Human-in-the-loop, nguồn dữ liệu, bản nháp và Fallback.
 3. [ ] **Stakeholders sẵn sàng đổi quy trình:** Chưa phỏng vấn nhân viên kinh doanh và quản lý dữ liệu.
 
@@ -201,13 +203,13 @@ Prototype có:
 
 ### Justification
 
-Ý tưởng có AI Fit rõ: LLM xử lý ngôn ngữ, Rule xử lý dữ liệu và người thật duyệt quyết định quan trọng. Tuy nhiên, nhóm chưa có giỏ hàng chính thức, API, baseline hoặc kết quả phỏng vấn nhân viên kinh doanh. Vì vậy, chưa nên đưa sản phẩm vào quy trình bán hàng thật. Nhóm có thể tiếp tục làm prototype offline để kiểm tra prompt và cách đo.
+Ý tưởng có AI Fit rõ: LLM xử lý ngôn ngữ, Rule lọc catalog và người thật duyệt quyết định quan trọng. Prototype đã chạy với bộ dữ liệu mẫu, nhưng nhóm chưa có giỏ hàng chính thức, API, baseline hoặc kết quả phỏng vấn nhân viên kinh doanh. Vì vậy, chưa nên đưa sản phẩm vào quy trình bán hàng thật.
 
 ## Pilot nhỏ nhất để chuyển sang GO
 
 | Thành phần | Thiết kế pilot |
 |---|---|
-| Dữ liệu | Snapshot 30–50 sản phẩm đã ẩn thông tin nhạy cảm, có mã căn, giá, vị trí, số phòng, trạng thái và thời điểm cập nhật |
+| Dữ liệu | Dùng catalog mẫu 82 căn để test; trước pilot cần nhân viên xác nhận 30–50 căn còn hiệu lực |
 | Tình huống | Ít nhất 20 nhu cầu khách hàng đã ẩn danh hoặc do nhân viên kinh doanh xây dựng |
 | Người đánh giá | 3–5 nhân viên kinh doanh kiểm tra tiêu chí và kết quả |
 | So sánh | Cùng một tình huống được xử lý bằng quy trình hiện tại và Rule + LLM |
