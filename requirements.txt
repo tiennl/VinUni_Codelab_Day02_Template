@@ -1,5 +1,14 @@
 # Environment Dependencies
 # List all required python packages here.
+
+# Backend chatbot BĐS (real_estate_backend.py)
+openai
+fastapi
+uvicorn[standard]
+pydantic
+
+# Prompt prototype Lab 02 (starter-code/prompt_prototype.py)
 google-genai
-google-generativeai
+
+# Testing
 pytest

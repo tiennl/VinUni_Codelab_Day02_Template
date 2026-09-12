@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1400" viewBox="0 0 1400 1400">
+  <defs>
+    <style>
+      .t   { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+      .title { font-size: 38px; font-weight: 700; fill: #1C2B2D; }
+      .sub   { font-size: 21px; fill: #6B7280; }
+      .step  { font-size: 16px; font-weight: 700; fill: #0F766E; letter-spacing: 1.5px; }
+      .name  { font-size: 25px; font-weight: 700; fill: #1C2B2D; }
+      .body  { font-size: 18px; fill: #4B5563; }
+      .time  { font-size: 23px; font-weight: 700; fill: #1C2B2D; }
+      .timeb { font-size: 23px; font-weight: 700; fill: #B91C1C; }
+      .bnk   { font-size: 14px; font-weight: 700; fill: #B91C1C; letter-spacing: 1.2px; }
+      .hand  { font-size: 14px; font-weight: 700; fill: #B45309; letter-spacing: 1.2px; }
+      .lg    { font-size: 18px; fill: #4B5563; }
+      .sumk  { font-size: 17px; fill: #6B7280; letter-spacing: 1px; }
+      .sumv  { font-size: 27px; font-weight: 700; fill: #1C2B2D; }
+      .sumr  { font-size: 27px; font-weight: 700; fill: #B91C1C; }
+    </style>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9CA3AF"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="1400" fill="#FBFAF8"/>
+  <rect x="0" y="0" width="1400" height="8" fill="#0F766E"/>
+
+  <text class="t title" x="60" y="86">Current-State Workflow — Tư vấn chọn BĐS Vinhomes Ocean Park</text>
+  <text class="t sub" x="60" y="122">Lab 02 · AI Product Scoping · Vin Smart Future — quan sát tại sàn giao dịch Ocean Park (Gia Lâm)</text>
+  <line x1="60" y1="150" x2="1340" y2="150" stroke="#E5E1D8" stroke-width="2"/>
+
+  <!-- ROW 1 -->
+  <g>
+    <rect x="60" y="190" width="360" height="250" rx="14" fill="#FFFFFF" stroke="#D8D3CB" stroke-width="2"/>
+    <text class="t step" x="88" y="230">BƯỚC 1</text>
+    <text class="t name" x="88" y="266">Nhận lead</text>
+    <line x1="88" y1="284" x2="392" y2="284" stroke="#EFEBE3" stroke-width="2"/>
+    <text class="t body" x="88" y="316">Ai: CRM / Tổng đài</text>
+    <text class="t body" x="88" y="344">Vào: Hotline, FB Ads, Zalo OA</text>
+    <text class="t body" x="88" y="372">Ra: Lead ID trong CRM</text>
+    <text class="t time" x="88" y="416">1 phút</text>
+  </g>
+
+  <g>
+    <rect x="520" y="190" width="360" height="250" rx="14" fill="#FFFFFF" stroke="#D8D3CB" stroke-width="2"/>
+    <text class="t step" x="548" y="230">BƯỚC 2</text>
+    <text class="t name" x="548" y="266">Hỏi nhu cầu khách</text>
+    <line x1="548" y1="284" x2="852" y2="284" stroke="#EFEBE3" stroke-width="2"/>
+    <text class="t body" x="548" y="316">Ai: Chuyên viên tư vấn</text>
+    <text class="t body" x="548" y="344">Vào: Gọi / nhắn 5–7 câu</text>
+    <text class="t body" x="548" y="372">Ra: Ghi chú rời rạc</text>
+    <text class="t time" x="548" y="416">8 phút</text>
+  </g>
+
+  <g>
+    <rect x="980" y="190" width="360" height="250" rx="14" fill="#FDF4F3" stroke="#C0392B" stroke-width="3"/>
+    <circle cx="1318" cy="216" r="9" fill="#C0392B"/>
+    <text class="t step" x="1008" y="230">BƯỚC 3</text>
+    <text class="t name" x="1008" y="266">Lọc bảng hàng</text>
+    <line x1="1008" y1="284" x2="1290" y2="284" stroke="#F0DCD9" stroke-width="2"/>
+    <text class="t body" x="1008" y="316">Ai: Chuyên viên tư vấn</text>
+    <text class="t body" x="1008" y="344">Vào: Excel &gt; 2.000 căn</text>
+    <text class="t body" x="1008" y="372">Ra: 3 mã căn phù hợp</text>
+    <text class="t timeb" x="1008" y="416">15 phút</text>
+    <text class="t bnk" x="1128" y="414">NÚT CỔ CHAI</text>
+  </g>
+
+  <!-- arrows row 1 -->
+  <line x1="425" y1="315" x2="512" y2="315" stroke="#9CA3AF" stroke-width="3" marker-end="url(#arw)"/>
+  <circle cx="468" cy="315" r="7" fill="#FFFFFF" stroke="#B45309" stroke-width="3"/>
+  <text class="t hand" x="428" y="290">HANDOFF</text>
+
+  <line x1="885" y1="315" x2="972" y2="315" stroke="#9CA3AF" stroke-width="3" marker-end="url(#arw)"/>
+  <circle cx="928" cy="315" r="7" fill="#FFFFFF" stroke="#B45309" stroke-width="3"/>
+  <text class="t hand" x="888" y="290">HANDOFF</text>
+
+  <!-- connector row1 -> row2 -->
+  <path d="M 1160 445 L 1160 505 L 475 505 L 475 545" fill="none" stroke="#9CA3AF" stroke-width="3" marker-end="url(#arw)"/>
+
+  <!-- ROW 2 -->
+  <g>
+    <rect x="295" y="550" width="360" height="250" rx="14" fill="#FDF4F3" stroke="#C0392B" stroke-width="3"/>
+    <circle cx="633" cy="576" r="9" fill="#C0392B"/>
+    <text class="t step" x="323" y="590">BƯỚC 4</text>
+    <text class="t name" x="323" y="626">Soạn tin tư vấn</text>
+    <line x1="323" y1="644" x2="605" y2="644" stroke="#F0DCD9" stroke-width="2"/>
+    <text class="t body" x="323" y="676">Ai: Chuyên viên tư vấn</text>
+    <text class="t body" x="323" y="704">Vào: 3 mã căn + bảng giá</text>
+    <text class="t body" x="323" y="732">Ra: Tin Zalo 3 căn + lý do</text>
+    <text class="t timeb" x="323" y="776">10 phút</text>
+    <text class="t bnk" x="443" y="774">NÚT CỔ CHAI</text>
+  </g>
+
+  <g>
+    <rect x="755" y="550" width="360" height="250" rx="14" fill="#FFFFFF" stroke="#D8D3CB" stroke-width="2"/>
+    <text class="t step" x="783" y="590">BƯỚC 5</text>
+    <text class="t name" x="783" y="626">Gửi &amp; follow-up</text>
+    <line x1="783" y1="644" x2="1087" y2="644" stroke="#EFEBE3" stroke-width="2"/>
+    <text class="t body" x="783" y="676">Ai: Chuyên viên tư vấn</text>
+    <text class="t body" x="783" y="704">Vào: Tin đã soạn</text>
+    <text class="t body" x="783" y="732">Ra: Đã gửi khách, chờ hồi</text>
+    <text class="t time" x="783" y="776">3 phút</text>
+  </g>
+
+  <line x1="660" y1="675" x2="747" y2="675" stroke="#9CA3AF" stroke-width="3" marker-end="url(#arw)"/>
+  <circle cx="703" cy="675" r="7" fill="#FFFFFF" stroke="#B45309" stroke-width="3"/>
+  <text class="t hand" x="663" y="650">HANDOFF</text>
+
+  <!-- waiting callout -->
+  <rect x="60" y="550" width="200" height="250" rx="14" fill="#FFF8E9" stroke="#E0C489" stroke-width="2"/>
+  <text class="t step" x="84" y="590" style="fill:#B45309">ĐỘ TRỄ</text>
+  <text class="t sumr" x="84" y="640">4 – 12 giờ</text>
+  <text class="t body" x="84" y="676">Lead đến ngoài</text>
+  <text class="t body" x="84" y="702">giờ hành chính</text>
+  <text class="t body" x="84" y="728">nằm im trong CRM</text>
+  <text class="t body" x="84" y="754">tới sáng hôm sau.</text>
+
+  <!-- summary -->
+  <rect x="60" y="860" width="1280" height="150" rx="14" fill="#FFFFFF" stroke="#D8D3CB" stroke-width="2"/>
+  <text class="t sumk" x="96" y="906">TỔNG THỜI GIAN CHẠM TAY NGƯỜI</text>
+  <text class="t sumv" x="96" y="954">37 phút / lead</text>
+  <text class="t body" x="96" y="984">1 + 8 + 15 + 10 + 3 phút</text>
+
+  <line x1="530" y1="890" x2="530" y2="980" stroke="#E5E1D8" stroke-width="2"/>
+  <text class="t sumk" x="566" y="906">HAI NÚT CỔ CHAI (BƯỚC 3 + 4)</text>
+  <text class="t sumr" x="566" y="954">25 / 37 phút — 68%</text>
+  <text class="t body" x="566" y="984">Lọc bảng hàng thủ công + gõ lại tin mẫu</text>
+
+  <line x1="1010" y1="890" x2="1010" y2="980" stroke="#E5E1D8" stroke-width="2"/>
+  <text class="t sumk" x="1046" y="906">LEAD MỖI NGÀY</text>
+  <text class="t sumv" x="1046" y="954">~400</text>
+  <text class="t body" x="1046" y="984">≈ 165 giờ công/ngày</text>
+
+  <!-- legend -->
+  <circle cx="74" cy="1064" r="9" fill="#C0392B"/>
+  <text class="t lg" x="94" y="1071">Nút cổ chai (Bottleneck)</text>
+  <circle cx="404" cy="1064" r="7" fill="#FFFFFF" stroke="#B45309" stroke-width="3"/>
+  <text class="t lg" x="424" y="1071">Điểm chuyển giao (Handoff)</text>
+  <rect x="770" y="1055" width="18" height="18" rx="4" fill="#FFF8E9" stroke="#E0C489" stroke-width="2"/>
+  <text class="t lg" x="800" y="1071">Thời gian chờ, không ai làm gì</text>
+
+  <line x1="60" y1="1110" x2="1340" y2="1110" stroke="#E5E1D8" stroke-width="2"/>
+
+  <text class="t sub" x="60" y="1156" style="fill:#1C2B2D; font-weight:700">Ba điều sơ đồ này làm lộ ra</text>
+  <text class="t body" x="60" y="1194">1. Lead chết ở handoff đầu tiên — không bước nào trong quy trình chạy được ngoài giờ hành chính.</text>
+  <text class="t body" x="60" y="1228">2. Bước 3 phụ thuộc trí nhớ bảng hàng của từng người; chuyên viên mới mất gấp 1,8 lần thời gian và bỏ sót căn phù hợp.</text>
+  <text class="t body" x="60" y="1262">3. Bước 4 lặp lại ~80% nội dung khuôn mẫu; phần có giá trị thật chỉ là 2–3 câu giải thích vì sao căn này hợp khách này.</text>
+
+  <text class="t body" x="60" y="1330" style="fill:#9CA3AF; font-size:16px">Các con số là ước lượng từ quan sát và phỏng vấn tại sàn, chưa đối chiếu dữ liệu CRM chính thức.</text>
+  <text class="t body" x="60" y="1356" style="fill:#9CA3AF; font-size:16px">Ngô Lê Thúy Tiên · branch tien · Future-state flow xem tại 02-deep-dive-report.md</text>
+</svg>
